@@ -5,12 +5,15 @@ import StatusBanner from './StatusBanner'
 import ComponentList from './ComponentList'
 import IncidentCard from './IncidentCard'
 import UptimeBar from './UptimeBar'
+import StatusChart from './StatusChart'
+import PollTable from './PollTable'
 
 export default function Dashboard() {
   const [status, setStatus] = useState(null)
   const [uptime, setUptime] = useState(null)
   const [incidents, setIncidents] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [chartHours, setChartHours] = useState(24)
 
   useEffect(() => {
     Promise.all([
@@ -50,6 +53,27 @@ export default function Dashboard() {
 
       <ComponentList components={status.components} />
 
+      {/* Status Timeline Chart */}
+      <div style={{ marginBottom: 32 }}>
+        <div className="section-header">
+          <h2>Status Timeline</h2>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[6, 24, 48, 168].map(h => (
+              <button
+                key={h}
+                className={`btn btn-sm ${chartHours === h ? 'btn-primary' : ''}`}
+                onClick={() => setChartHours(h)}
+              >
+                {h <= 48 ? `${h}h` : '7d'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="card">
+          <StatusChart hours={chartHours} />
+        </div>
+      </div>
+
       {uptime && (
         <div className="uptime-section">
           <div className="section-header">
@@ -70,7 +94,7 @@ export default function Dashboard() {
             <div className="stat-card">
               <div className="stat-value" style={{ color: uptime.incidents?.total_downtime_minutes > 0 ? 'var(--red)' : 'var(--green)' }}>
                 {uptime.incidents?.total_downtime_minutes
-                  ? `${Math.round(uptime.incidents.total_downtime_minutes / 60)}h ${uptime.incidents.total_downtime_minutes % 60}m`
+                  ? `${Math.floor(uptime.incidents.total_downtime_minutes / 60)}h ${uptime.incidents.total_downtime_minutes % 60}m`
                   : '0m'}
               </div>
               <div className="stat-label">Total Downtime</div>
@@ -87,6 +111,17 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Recent Polls Table */}
+      <div style={{ marginBottom: 32 }}>
+        <div className="section-header">
+          <h2>Recent Polls</h2>
+        </div>
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <PollTable />
+        </div>
+      </div>
+
+      {/* Recent Incidents */}
       <div className="section-header">
         <h2>Recent Incidents</h2>
         <a href="/incidents">View all</a>
