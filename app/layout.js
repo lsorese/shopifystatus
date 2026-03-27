@@ -12,8 +12,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Shopify Status Tracker — Real Downtime History",
-  description: "Independent monitoring of Shopify's real downtime, incident history, and uptime statistics.",
+  title: "Shopify Status Tracker — Real Downtime Monitoring",
+  description: "Independent monitoring of Shopify's real uptime and component status, updated every 5 minutes.",
 };
 
 export default function RootLayout({ children }) {
@@ -25,7 +25,6 @@ export default function RootLayout({ children }) {
             <h1>Shopify Status Tracker</h1>
             <nav>
               <a href="/">Dashboard</a>
-              <a href="/incidents">Incidents</a>
               <a href="/admin">Admin</a>
             </nav>
           </div>

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import StatusBanner from './StatusBanner'
 import ComponentList from './ComponentList'
-import IncidentCard from './IncidentCard'
 import UptimeBar from './UptimeBar'
 import StatusChart from './StatusChart'
 import PollTable from './PollTable'
@@ -11,19 +10,16 @@ import PollTable from './PollTable'
 export default function Dashboard() {
   const [status, setStatus] = useState(null)
   const [uptime, setUptime] = useState(null)
-  const [incidents, setIncidents] = useState(null)
   const [loading, setLoading] = useState(true)
   const [chartHours, setChartHours] = useState(24)
 
   useEffect(() => {
     Promise.all([
       fetch('/api/status').then(r => r.json()),
-      fetch('/api/uptime?days=30').then(r => r.json()),
-      fetch('/api/incidents?limit=10').then(r => r.json())
-    ]).then(([statusData, uptimeData, incidentsData]) => {
+      fetch('/api/uptime?days=30').then(r => r.json())
+    ]).then(([statusData, uptimeData]) => {
       setStatus(statusData)
       setUptime(uptimeData)
-      setIncidents(incidentsData)
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [])
@@ -44,8 +40,6 @@ export default function Dashboard() {
       </div>
     )
   }
-
-  const recentIncidents = incidents?.incidents || []
 
   return (
     <>
@@ -88,16 +82,12 @@ export default function Dashboard() {
               <div className="stat-label">Overall Uptime</div>
             </div>
             <div className="stat-card">
-              <div className="stat-value">{uptime.incidents?.total || 0}</div>
-              <div className="stat-label">Incidents (30d)</div>
+              <div className="stat-value">{uptime.total_non_operational_checks || 0}</div>
+              <div className="stat-label">Non-Operational Checks</div>
             </div>
             <div className="stat-card">
-              <div className="stat-value" style={{ color: uptime.incidents?.total_downtime_minutes > 0 ? 'var(--red)' : 'var(--green)' }}>
-                {uptime.incidents?.total_downtime_minutes
-                  ? `${Math.floor(uptime.incidents.total_downtime_minutes / 60)}h ${uptime.incidents.total_downtime_minutes % 60}m`
-                  : '0m'}
-              </div>
-              <div className="stat-label">Total Downtime</div>
+              <div className="stat-value">{uptime.total_checks || 0}</div>
+              <div className="stat-label">Total Checks</div>
             </div>
           </div>
 
@@ -120,22 +110,6 @@ export default function Dashboard() {
           <PollTable />
         </div>
       </div>
-
-      {/* Recent Incidents */}
-      <div className="section-header">
-        <h2>Recent Incidents</h2>
-        <a href="/incidents">View all</a>
-      </div>
-
-      {recentIncidents.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-          No incidents recorded yet. The poller will start collecting data on its next run.
-        </div>
-      ) : (
-        recentIncidents.map(inc => (
-          <IncidentCard key={inc.id} incident={inc} showUpdates={false} />
-        ))
-      )}
     </>
   )
 }

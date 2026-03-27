@@ -17,7 +17,7 @@ function getSupabase() {
 export default function AdminPage() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState('incidents')
+  const [tab, setTab] = useState('polling')
 
   useEffect(() => {
     const sb = getSupabase()
@@ -46,7 +46,7 @@ export default function AdminPage() {
       </div>
 
       <div className="admin-tabs">
-        {['incidents', 'polling', 'logs'].map(t => (
+        {['polling', 'logs'].map(t => (
           <button
             key={t}
             className={`admin-tab ${tab === t ? 'active' : ''}`}
@@ -57,7 +57,6 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {tab === 'incidents' && <IncidentsTab token={session.access_token} />}
       {tab === 'polling' && <PollingTab token={session.access_token} />}
       {tab === 'logs' && <LogsTab />}
     </div>
@@ -96,86 +95,6 @@ function LoginForm() {
         {loading ? 'Signing in...' : 'Sign In'}
       </button>
     </form>
-  )
-}
-
-function IncidentsTab({ token }) {
-  const [incidents, setIncidents] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [editingId, setEditingId] = useState(null)
-  const [noteText, setNoteText] = useState('')
-
-  useEffect(() => {
-    fetch('/api/incidents?limit=50')
-      .then(r => r.json())
-      .then(data => { setIncidents(data.incidents || []); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
-
-  async function saveNote(id) {
-    await fetch('/api/admin/incidents', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ id, admin_notes: noteText })
-    })
-    setIncidents(prev => prev.map(inc => inc.id === id ? { ...inc, admin_notes: noteText } : inc))
-    setEditingId(null)
-  }
-
-  if (loading) return <div className="loading"><div className="spinner" /></div>
-
-  return (
-    <div>
-      <h3 style={{ marginBottom: 16 }}>Incidents ({incidents.length})</h3>
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Name</th>
-            <th>Impact</th>
-            <th>Status</th>
-            <th>Duration</th>
-            <th>Components</th>
-            <th>Notes</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {incidents.map(inc => (
-            <tr key={inc.id}>
-              <td style={{ whiteSpace: 'nowrap' }}>{new Date(inc.created_at).toLocaleDateString()}</td>
-              <td>{inc.name}</td>
-              <td><span className={`impact-badge impact-${inc.impact}`}>{inc.impact}</span></td>
-              <td style={{ textTransform: 'capitalize' }}>{inc.status}</td>
-              <td>{inc.duration_minutes ? `${inc.duration_minutes}m` : '—'}</td>
-              <td>{(inc.affected_components || []).join(', ')}</td>
-              <td>
-                {editingId === inc.id ? (
-                  <textarea
-                    value={noteText}
-                    onChange={e => setNoteText(e.target.value)}
-                    rows={2}
-                    style={{ width: 200, padding: 6, background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 4, color: 'var(--text)', fontSize: 12 }}
-                  />
-                ) : (
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{inc.admin_notes || '—'}</span>
-                )}
-              </td>
-              <td>
-                {editingId === inc.id ? (
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    <button className="btn btn-sm btn-primary" onClick={() => saveNote(inc.id)}>Save</button>
-                    <button className="btn btn-sm" onClick={() => setEditingId(null)}>Cancel</button>
-                  </div>
-                ) : (
-                  <button className="btn btn-sm" onClick={() => { setEditingId(inc.id); setNoteText(inc.admin_notes || '') }}>Edit</button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   )
 }
 
@@ -246,9 +165,6 @@ function LogsTab() {
           <tr>
             <th>Time</th>
             <th>Status</th>
-            <th>New</th>
-            <th>Updated</th>
-            <th>Found</th>
             <th>Components</th>
             <th>Duration</th>
             <th>Error</th>
@@ -258,10 +174,7 @@ function LogsTab() {
           {logs.map(log => (
             <tr key={log.id}>
               <td style={{ whiteSpace: 'nowrap' }}>{new Date(log.polled_at).toLocaleString()}</td>
-              <td><span className={`status-${log.overall_status === 'none' ? 'operational' : log.overall_status}`}>{log.overall_status}</span></td>
-              <td>{log.incidents_new}</td>
-              <td>{log.incidents_updated}</td>
-              <td>{log.incidents_found}</td>
+              <td><span className={`status-${log.overall_status === 'none' ? 'operational' : log.overall_status}`}>{log.overall_status === 'none' ? 'operational' : log.overall_status}</span></td>
               <td>{log.components_polled}</td>
               <td>{log.duration_ms}ms</td>
               <td style={{ color: 'var(--red)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{log.error || '—'}</td>

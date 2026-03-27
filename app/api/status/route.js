@@ -4,7 +4,6 @@ import { getSupabaseAdmin } from '@/lib/supabase-server'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  // Get latest snapshot per component
   const { data: components } = await getSupabaseAdmin()
     .from('components')
     .select('id, name, position')
@@ -27,15 +26,6 @@ export async function GET() {
     })
   }
 
-  // Get active incidents
-  const { data: activeIncidents } = await getSupabaseAdmin()
-    .from('incidents')
-    .select('*, incident_updates(*)')
-    .neq('status', 'resolved')
-    .neq('status', 'postmortem')
-    .order('created_at', { ascending: false })
-
-  // Overall status
   const hasOutage = componentStatuses.some(c => c.status === 'major_outage')
   const hasPartial = componentStatuses.some(c => c.status === 'partial_outage')
   const hasDegraded = componentStatuses.some(c => c.status === 'degraded_performance')
@@ -47,7 +37,6 @@ export async function GET() {
   else if (hasDegraded) overall = 'degraded_performance'
   else if (hasMaintenance) overall = 'under_maintenance'
 
-  // Last poll time
   const { data: lastPoll } = await getSupabaseAdmin()
     .from('poll_log')
     .select('polled_at')
@@ -58,7 +47,6 @@ export async function GET() {
   return NextResponse.json({
     overall,
     components: componentStatuses,
-    active_incidents: activeIncidents || [],
     last_checked: lastPoll?.polled_at || null
   })
 }
